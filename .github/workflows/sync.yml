@@ -1,6 +1,5 @@
 name: Sync two branches
 
-# cron: every 2 weeks
 on: [ workflow_dispatch ]
 
 jobs:
