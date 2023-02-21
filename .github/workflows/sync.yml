@@ -1,0 +1,16 @@
+name: Sync two branches
+
+# cron: every 2 weeks
+on: [ workflow_dispatch ]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: production
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v4
+        with:
+          branch: develop
