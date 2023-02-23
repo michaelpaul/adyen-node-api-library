@@ -20,9 +20,12 @@ jobs:
         uses: actions/github-script@v6
         id: release
         with:
+          debug: true
           script: |
             const release = require('./.github/scripts/release.js')
             return await release.releaseRequest(github);
+      - name: Get result
+        run: echo "${{steps.release.outputs.result}}"
       - name: Bump package.json
         run: npm --no-git-tag-version version ${{steps.release.outputs.result.increment}}
       - name: Create Pull Request
