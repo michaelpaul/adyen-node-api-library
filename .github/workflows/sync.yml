@@ -16,16 +16,17 @@ jobs:
         run: |
           git fetch origin develop:develop
           git reset --hard develop
-      - uses: actions/github-script@v6
+      - name: Prepare release request
+        uses: actions/github-script@v6
         id: release
         with:
           script: |
             const release = require('./.github/scripts/release.js')
             return await release.releaseRequest(github);
       - name: Bump package.json
-        run: npm --no-git-tag-version version ${{steps.release.outputs.increment}}
+        run: npm --no-git-tag-version version ${{steps.release.outputs.result.increment}}
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:
           branch: automation/release
-          title: Release v${{steps.release.outputs.nextVersion}}
+          title: Release v${{steps.release.outputs.result.nextVersion}}
