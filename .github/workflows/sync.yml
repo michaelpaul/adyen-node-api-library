@@ -21,7 +21,7 @@ jobs:
         with:
           script: |
             const release = require('./.github/scripts/release.js')
-            return release.releaseRequest(github);
+            return await release.releaseRequest(github);
       - name: Bump package.json
         run: npm --no-git-tag-version version ${{steps.release.outputs.increment}}
       - name: Create Pull Request
