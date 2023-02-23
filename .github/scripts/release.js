@@ -58,9 +58,7 @@ exports.bump = async (github) => {
     return increment;
 };
 
-exports.releaseRequest = async (github) => {
-  return {
-    increment: await this.bump(github),
-    nextVersion: '13.0.0'
-  };
+exports.releaseRequest = async (github, core) => {
+  core.setOutput('increment', await this.bump(github));
+  core.setOutput('nextVersion', '13.0.0');
 };
