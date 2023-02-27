@@ -1,13 +1,13 @@
-exports.bump = async (github) => {
-    const result = await github.graphql(`
-    {
-        repository(owner: "Adyen", name: "adyen-java-api-library") {
+exports.compareBranches = async (github, { owner, repo, base, head }) => {
+  return await github.graphql(`
+    query($owner: String!, $repo: String!, $base: String!, $head: String!) {
+        repository(owner: $owner, name: $repo) {
           id
           name
-          ref(qualifiedName: "main") {
-            compare(headRef: "develop") {
+          ref(qualifiedName: $base) {
+            compare(headRef: $head) {
               aheadBy
-              commits(first: 50) {
+              commits(first: 100) {
                 edges {
                   node {
                     message
@@ -29,36 +29,45 @@ exports.bump = async (github) => {
           }
         }
     } 
-    `);
+    `, { owner, repo, base, head });
+}
 
-    if (result.repository.ref.compare.aheadBy < 1) {
-        // @todo remove this 
-        console.log("Nothing to release");
-        return '';
-    }
+exports.bump = async (github, context) => {
+  const result = await this.compareBranches(github, {
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    base: 'main',
+    head: 'develop',
+  });
 
-    let increment = 'patch';
+  if (result.repository.ref.compare.aheadBy < 1) {
+    // @todo remove this 
+    console.log("Nothing to release");
+    return '';
+  }
 
-    // increment based on the merged PR labels  
-    for (const { node: { associatedPullRequests: prs } } of result.repository.ref.compare.commits.edges) {
-        for (const { node: { labels: { nodes: labels } } } of prs.edges) {
-            for (const { name: label } of labels) {
-                switch (label) {
-                    case 'Feature':
-                        increment = 'minor';
-                        break;
-                    case 'Breaking change':
-                        increment = 'major';
-                        break;
-                }
-            }
+  let increment = 'patch';
+
+  // increment based on the merged PR labels  
+  for (const { node: { associatedPullRequests: prs } } of result.repository.ref.compare.commits.edges) {
+    for (const { node: { labels: { nodes: labels } } } of prs.edges) {
+      for (const { name: label } of labels) {
+        switch (label) {
+          case 'Feature':
+            increment = 'minor';
+            break;
+          case 'Breaking change':
+            increment = 'major';
+            break;
         }
+      }
     }
+  }
 
-    return increment;
+  return increment;
 };
 
-exports.releaseRequest = async (github, core) => {
-  core.setOutput('increment', await this.bump(github));
+exports.releaseRequest = async ({ github, context, core }) => {
+  core.setOutput('increment', await this.bump(github, context));
   core.setOutput('nextVersion', '13.0.0');
 };

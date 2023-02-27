@@ -23,7 +23,7 @@ jobs:
           debug: true
           script: |
             const release = require('./.github/scripts/release.js')
-            await release.releaseRequest(github, core);
+            await release.releaseRequest({github, context, core});
       - name: Bump package.json
         run: npm --no-git-tag-version version ${{steps.release.outputs.increment}}
       - name: Create Pull Request
