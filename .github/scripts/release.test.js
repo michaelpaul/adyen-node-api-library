@@ -17,10 +17,36 @@ const context = {
   }
 };
 
-test('Bump', async (t) => {
-  const ver = await release.bump(github, context);
+test('Detect changes', async (t) => {
+  const ver = await release.detectChanges(github, context);
 
   assert.strictEqual(ver, 'major');
+});
+
+test('Node.js package version', async (t) => {
+  const version = await release.packageVersion();
+
+  assert.ok(version);
+});
+
+test('Get next version', async (t) => {
+  await t.test('Major', async (t) => {
+    const ver = await release.nextVersion('13.1.2', 'major');
+
+    assert.strictEqual(ver, '14.0.0');
+  });
+
+  await t.test('Minor', async (t) => {
+    const ver = await release.nextVersion('13.1.2', 'minor');
+
+    assert.strictEqual(ver, '13.2.0');
+  });
+
+  await t.test('Patch', async (t) => {
+    const ver = await release.nextVersion('13.1.2', 'patch');
+
+    assert.strictEqual(ver, '13.1.3');
+  });
 });
 
 test('Compare branches', async (t) => {
@@ -34,10 +60,12 @@ test('Compare branches', async (t) => {
   assert.strictEqual('adyen-java-api-library', diff.repository.name);
 });
 
-test('Prepare PR', async (t) => {
-  t.mock.method(core, 'setOutput', () => { });
+test('Bump', async (t) => {
+  t.mock.method(core, 'setOutput', t.mock.fn());
+  const currentVersion = () => '1.2.3';
+  const options = { github, context, core, getCurrentVersion: currentVersion };
 
-  await release.releaseRequest({ github, context, core });
+  await release.bump(options);
 
   assert.strictEqual(core.setOutput.mock.calls.length, 2);
 });

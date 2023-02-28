@@ -23,9 +23,10 @@ jobs:
           debug: true
           script: |
             const release = require('./.github/scripts/release.js')
-            await release.releaseRequest({github, context, core});
+            const options = { github, context, core, getCurrentVersion: release.packageVersion };
+            await release.bump(options);
       - name: Bump package.json
-        run: npm --no-git-tag-version version ${{steps.release.outputs.increment}}
+        run: npm --no-git-tag-version version ${{steps.release.outputs.nextVersion}}
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
         with:

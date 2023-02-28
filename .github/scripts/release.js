@@ -1,3 +1,29 @@
+// Get the current version of a Node.js package
+exports.packageVersion = () => {
+  return require('../../package.json').version;
+};
+
+// Next semantic version number
+exports.nextVersion = (current, increment) => {
+  let [major, minor, patch] = current.split('.');
+  switch (increment) {
+    case 'patch':
+      patch++;
+      break;
+    case 'minor':
+      minor++;
+      patch = 0;
+      break;
+    case 'major':
+      major++;
+      minor = 0;
+      patch = 0;
+      break;
+  }
+  return [major, minor, patch].join('.');
+};
+
+// Compare two branches on Github
 exports.compareBranches = async (github, { owner, repo, base, head }) => {
   return await github.graphql(`
     query($owner: String!, $repo: String!, $base: String!, $head: String!) {
@@ -32,7 +58,8 @@ exports.compareBranches = async (github, { owner, repo, base, head }) => {
     `, { owner, repo, base, head });
 }
 
-exports.bump = async (github, context) => {
+// Scan the changelog to decide what kind of release we need
+exports.detectChanges = async (github, context) => {
   const result = await this.compareBranches(github, {
     owner: context.repo.owner,
     repo: context.repo.repo,
@@ -40,7 +67,7 @@ exports.bump = async (github, context) => {
     head: 'develop',
   });
 
-  if (result.repository.ref.compare.aheadBy < 1) {
+  if (!result || result.repository.ref.compare.aheadBy < 1) {
     // @todo remove this 
     console.log("Nothing to release");
     return '';
@@ -52,11 +79,12 @@ exports.bump = async (github, context) => {
   for (const { node: { associatedPullRequests: prs } } of result.repository.ref.compare.commits.edges) {
     for (const { node: { labels: { nodes: labels } } } of prs.edges) {
       for (const { name: label } of labels) {
-        switch (label) {
-          case 'Feature':
+        const normalizedLabel = label.toLowerCase().replace(' ', '-');
+        switch (normalizedLabel) {
+          case 'feature':
             increment = 'minor';
             break;
-          case 'Breaking change':
+          case 'breaking-change':
             increment = 'major';
             break;
         }
@@ -67,7 +95,11 @@ exports.bump = async (github, context) => {
   return increment;
 };
 
-exports.releaseRequest = async ({ github, context, core }) => {
-  core.setOutput('increment', await this.bump(github, context));
-  core.setOutput('nextVersion', '13.0.0');
+// Define next release
+exports.bump = async ({ github, context, core, getCurrentVersion }) => {
+  const increment = await this.detectChanges(github, context);
+  const nextVersion = this.nextVersion(getCurrentVersion(), increment);
+
+  core.setOutput('increment', increment);
+  core.setOutput('nextVersion', nextVersion);
 };
