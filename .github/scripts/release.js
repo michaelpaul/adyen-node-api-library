@@ -68,8 +68,7 @@ exports.detectChanges = async (github, context) => {
   });
 
   if (!result || result.repository.ref.compare.aheadBy < 1) {
-    // @todo remove this 
-    console.log("Nothing to release");
+    // Nothing to release
     return '';
   }
 
