@@ -32,3 +32,5 @@ jobs:
         with:
           branch: automation/release
           title: Release v${{steps.release.outputs.nextVersion}}
+          body: ${{steps.release.outputs.changelog}}
+          commit-message: "chore(release): bump to ${{steps.release.outputs.nextVersion}}"

@@ -32,6 +32,7 @@ const comparisonFixture = {
                   "edges": [
                     {
                       "node": {
+                        "number": 10,
                         "labels": {
                           "nodes": [
                             {
@@ -52,6 +53,7 @@ const comparisonFixture = {
                   "edges": [
                     {
                       "node": {
+                        "number": 20,
                         "labels": {
                           "nodes": [
                             {
@@ -72,6 +74,7 @@ const comparisonFixture = {
                   "edges": [
                     {
                       "node": {
+                        "number": 30,
                         "labels": {
                           "nodes": []
                         }
@@ -88,73 +91,80 @@ const comparisonFixture = {
   }
 };
 
-test('Detect changes', async (t) => {
-  await t.test('Major', async t => {
-    t.mock.method(github, 'graphql', () => comparisonFixture);
 
-    const ver = await release.detectChanges(github, context);
+test('Changelog', t => {
+  const changelog = release.changelog(comparisonFixture);
+
+  assert.deepEqual(changelog, [
+    "- #10",
+    "- #20",
+    "- #30",
+  ]);
+});
+
+test('Detect changes', async t => {
+  await t.test('Major', t => {
+    const ver = release.detectChanges(comparisonFixture);
 
     assert.strictEqual(ver, 'major');
   });
 
-  await t.test('Zero changes', async t => {
+  await t.test('Zero changes', t => {
     let sync = structuredClone(comparisonFixture);
     sync.repository.ref.compare.aheadBy = 0;
-    t.mock.method(github, 'graphql', () => sync);
 
-    const ver = await release.detectChanges(github, context);
+    const ver = release.detectChanges(sync);
 
     assert.strictEqual(ver, '');
   });
 
-  await t.test('No labels', async t => {
+  await t.test('No labels', t => {
     let noLabels = structuredClone(comparisonFixture);
     for (const edge of noLabels.repository.ref.compare.commits.edges) {
       for (const prs of edge.node.associatedPullRequests.edges) {
         prs.node.labels.nodes = [];
       }
     }
-    t.mock.method(github, 'graphql', () => noLabels);
 
-    const ver = await release.detectChanges(github, context);
+    const ver = release.detectChanges(noLabels);
 
     assert.strictEqual(ver, 'patch', 'Simple changelog should be a patch');
   });
 });
 
-test('Node.js package version', async (t) => {
-  const version = await release.packageVersion();
+test('Node.js package version', t => {
+  const version = release.packageVersion();
 
   assert.ok(version);
 });
 
-test('Get next version', async (t) => {
-  await t.test('Major', async (t) => {
-    const ver = await release.nextVersion('13.1.2', 'major');
+test('Get next version', async t => {
+  await t.test('Major', async t => {
+    const ver = release.nextVersion('13.1.2', 'major');
 
     assert.strictEqual(ver, '14.0.0');
   });
 
-  await t.test('Minor', async (t) => {
-    const ver = await release.nextVersion('13.1.2', 'minor');
+  await t.test('Minor', async t => {
+    const ver = release.nextVersion('13.1.2', 'minor');
 
     assert.strictEqual(ver, '13.2.0');
   });
 
-  await t.test('Patch', async (t) => {
-    const ver = await release.nextVersion('13.1.2', 'patch');
+  await t.test('Patch', async t => {
+    const ver = release.nextVersion('13.1.2', 'patch');
 
     assert.strictEqual(ver, '13.1.3');
   });
 
-  await t.test('Unchanged', async (t) => {
-    const ver = await release.nextVersion('1.2.3', '');
+  await t.test('Unchanged', async t => {
+    const ver = release.nextVersion('1.2.3', '');
 
     assert.strictEqual(ver, '1.2.3');
   });
 });
 
-test('Compare branches', async (t) => {
+test('Compare branches', async t => {
   t.mock.method(github, 'graphql', () => comparisonFixture);
   const diff = await release.compareBranches(github, {
     owner: 'Adyen',
@@ -166,7 +176,7 @@ test('Compare branches', async (t) => {
   assert.strictEqual('adyen-node-api-library', diff.repository.name);
 });
 
-test('Bump', async (t) => {
+test('Bump', async t => {
   t.mock.method(github, 'graphql', () => comparisonFixture);
   t.mock.method(core, 'setOutput', t.mock.fn());
   const currentVersion = () => '1.2.3';
@@ -174,5 +184,5 @@ test('Bump', async (t) => {
 
   await release.bump(options);
 
-  assert.strictEqual(core.setOutput.mock.calls.length, 2);
+  assert.strictEqual(core.setOutput.mock.calls.length, 3);
 });

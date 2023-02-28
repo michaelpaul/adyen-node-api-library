@@ -3,6 +3,17 @@ exports.packageVersion = () => {
   return require('../../package.json').version;
 };
 
+// List of merged pull requests in Markdown
+exports.changelog = (changeset) => {
+  let entries = [];
+  for (const { node: { associatedPullRequests: prs } } of changeset.repository.ref.compare.commits.edges) {
+    for (const { node: { number: number } } of prs.edges) {
+      entries.push(`- #${number}`);
+    }
+  }
+  return entries;
+};
+
 // Next semantic version number
 exports.nextVersion = (current, increment) => {
   let [major, minor, patch] = current.split('.');
@@ -28,7 +39,6 @@ exports.compareBranches = async (github, { owner, repo, base, head }) => {
   return await github.graphql(`
     query($owner: String!, $repo: String!, $base: String!, $head: String!) {
         repository(owner: $owner, name: $repo) {
-          id
           name
           ref(qualifiedName: $base) {
             compare(headRef: $head) {
@@ -40,6 +50,7 @@ exports.compareBranches = async (github, { owner, repo, base, head }) => {
                     associatedPullRequests(first: 5) {
                       edges {
                         node {
+                          number
                           labels(first: 5) {
                             nodes {
                               name
@@ -59,15 +70,8 @@ exports.compareBranches = async (github, { owner, repo, base, head }) => {
 }
 
 // Scan the changelog to decide what kind of release we need
-exports.detectChanges = async (github, context) => {
-  const result = await this.compareBranches(github, {
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    base: 'main',
-    head: 'develop',
-  });
-
-  if (!result || result.repository.ref.compare.aheadBy < 1) {
+exports.detectChanges = (changeset) => {
+  if (!changeset || changeset.repository.ref.compare.aheadBy < 1) {
     // Nothing to release
     return '';
   }
@@ -75,7 +79,7 @@ exports.detectChanges = async (github, context) => {
   let increment = 'patch';
 
   // increment based on the merged PR labels  
-  for (const { node: { associatedPullRequests: prs } } of result.repository.ref.compare.commits.edges) {
+  for (const { node: { associatedPullRequests: prs } } of changeset.repository.ref.compare.commits.edges) {
     for (const { node: { labels: { nodes: labels } } } of prs.edges) {
       for (const { name: label } of labels) {
         const normalizedLabel = label.toLowerCase().replace(' ', '-');
@@ -96,9 +100,17 @@ exports.detectChanges = async (github, context) => {
 
 // Define next release
 exports.bump = async ({ github, context, core, getCurrentVersion }) => {
-  const increment = await this.detectChanges(github, context);
+  const changeset = await this.compareBranches(github, {
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    base: 'main',
+    head: 'develop',
+  });
+  const changelog = this.changelog(changeset);
+  const increment = this.detectChanges(changeset);
   const nextVersion = this.nextVersion(getCurrentVersion(), increment);
 
   core.setOutput('increment', increment);
   core.setOutput('nextVersion', nextVersion);
+  core.setOutput('changelog', changelog.join("\n"));
 };
