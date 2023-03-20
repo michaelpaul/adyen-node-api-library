@@ -29,6 +29,7 @@ jobs:
             --generate-notes --target main
       - name: Update develop branch
         run: |
+          git fetch origin develop:develop
           git checkout develop
           git merge main
           git push origin develop
