@@ -27,3 +27,8 @@ jobs:
           gh release create v${{steps.release.outputs.version}} \
             --title 'Adyen Node API Library v${{steps.release.outputs.version}}' \
             --generate-notes --target main
+      - name: Update develop branch
+        run: |
+          git checkout develop
+          git merge main
+          git push origin develop
