@@ -11,6 +11,8 @@
 
 This is the officially supported NodeJS library for using Adyen's APIs.
 
+Awesome. 
+
 ## Supported API versions
 The Library supports all APIs under the following services:
 | API | Description | Service Name | Supported version |
