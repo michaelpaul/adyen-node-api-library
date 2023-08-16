@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     name: A job using a custom action
     steps:
-      - uses: michaelpaul/release-automation-action@main
+      - uses: michaelpaul/release-automation-action@composite
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pre-release: ${{ inputs.prerelease || false }}
