@@ -15,6 +15,9 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     name: A job using a custom action
     steps:
