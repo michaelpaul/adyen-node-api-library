@@ -25,3 +25,4 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pre-release: ${{ inputs.prerelease || false }}
+          version-files: package.json
