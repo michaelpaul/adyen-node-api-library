@@ -14,14 +14,14 @@ on:
         - custom-action
 
 jobs:
-  release:
+  main:
     permissions:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
-    name: A job using a custom action
     steps:
-      - uses: michaelpaul/release-automation-action@composite
+      - name: Prepare the next main release
+        uses: michaelpaul/release-automation-action@main
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           pre-release: ${{ inputs.prerelease || false }}
