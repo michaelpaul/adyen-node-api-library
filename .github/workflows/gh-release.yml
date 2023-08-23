@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - develop
     paths:
       - VERSION
 
@@ -15,6 +15,6 @@ jobs:
     uses: michaelpaul/release-automation-action/.github/workflows/reusable-github-release.yml@v1.0.10
     with:
       release-title: Adyen Node API Library 
-      develop-branch: main
+      develop-branch: develop
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
