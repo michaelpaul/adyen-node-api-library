@@ -5,15 +5,16 @@ on:
   push:
     branches:
       - main
+    paths:
+      - VERSION
 
 jobs:
-  main:
+  github:
     permissions:
       contents: write
-    uses: Adyen/release-automation-action/.github/workflows/reusable-github-release.yml@v1.0.0
+    uses: michaelpaul/release-automation-action/.github/workflows/reusable-github-release.yml@v1.0.10
     with:
       release-title: Adyen Node API Library 
-      develop-branch: develop
-      release-branch: main
+      develop-branch: main
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}

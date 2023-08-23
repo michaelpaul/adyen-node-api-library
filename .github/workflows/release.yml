@@ -1,21 +1,27 @@
 name: Prepare release
 
 on:
-  push:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - closed
+      - labeled
+      - unlabeled
     branches:
       - develop
 
 jobs:
-  main:
+  candidate:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged && !startsWith(github.head_ref, 'promote/'))
     permissions:
       contents: write
       pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: Prepare the next main release
-        uses: Adyen/release-automation-action@v1.0.0
+        uses: michaelpaul/release-automation-action@v1.0.10
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           develop-branch: develop
-          release-branch: main
           version-files: package.json
